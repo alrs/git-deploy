@@ -52,5 +52,8 @@ func requestHandler(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	payloadAction(payload)
+	err = payloadAction(payload)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
