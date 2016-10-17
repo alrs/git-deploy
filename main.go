@@ -16,7 +16,8 @@ type CreateEvent struct {
 }
 
 type Repository struct {
-	Name string
+	Name     string
+	FullName string `json:"full_name"`
 }
 
 func main() {
@@ -34,8 +35,8 @@ func parsePayload(body []byte) (payload CreateEvent, err error) {
 func payloadAction(payload CreateEvent) (err error) {
 	switch payload.RefType {
 	case "tag":
-		fmt.Printf("STUB: deploy repo %s at tag %s\n",
-			payload.Repository.Name, payload.Ref)
+		fmt.Printf("STUB: git checkout git@github.com:%s && cd %s && git checkout %s\n",
+			payload.Repository.FullName, payload.Repository.Name, payload.Ref)
 	case "":
 		err = fmt.Errorf("Payload ref_type was empty.")
 	}

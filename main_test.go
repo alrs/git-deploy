@@ -10,9 +10,10 @@ const testPayload = "testdata/create_event.json"
 
 func TestParsePayload(t *testing.T) {
 	expected := map[string]string{
-		"repo":    "public-repo",
-		"refType": "tag",
-		"ref":     "0.0.1",
+		"fullName": "baxterthehacker/public-repo",
+		"name":     "public-repo",
+		"refType":  "tag",
+		"ref":      "0.0.1",
 	}
 	j, err := ioutil.ReadFile(testPayload)
 	if err != nil {
@@ -28,9 +29,10 @@ func TestParsePayload(t *testing.T) {
 	}
 
 	result := map[string]string{
-		"repo":    p.Repository.Name,
-		"refType": p.RefType,
-		"ref":     p.Ref,
+		"fullName": p.Repository.FullName,
+		"name":     p.Repository.Name,
+		"refType":  p.RefType,
+		"ref":      p.Ref,
 	}
 
 	if reflect.DeepEqual(expected, result) {
