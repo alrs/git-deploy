@@ -1,50 +1,55 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	"gopkg.in/go-playground/webhooks.v1"
-	"gopkg.in/go-playground/webhooks.v1/github"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
-	"strings"
 )
 
+type CreateEvent struct {
+	Ref        string
+	RefType    string `json:"ref_type"`
+	Repository Repository
+}
+
+type Repository struct {
+	Name string
+}
+
 func main() {
-	port := os.Getenv("HOOK_PORT")
-	hook := github.New(&github.Config{})
-	//hook.RegisterEvents(handlePush, github.PushEvent)
-	hook.RegisterEvents(handleCreate, github.CreateEvent)
-	err := webhooks.Run(hook, ":"+port, "/")
+	port := os.Getenv("PORT")
+	route := os.Getenv("ROUTE")
+	http.HandleFunc(route, requestHandler)
+	log.Fatal(http.ListenAndServe(":"+port, nil))
+}
+
+func parsePayload(body []byte) (payload CreateEvent, err error) {
+	err = json.Unmarshal(body, &payload)
+	return
+}
+
+func payloadAction(payload CreateEvent) (err error) {
+	switch payload.RefType {
+	case "tag":
+		fmt.Printf("STUB: deploy repo %s at tag %s\n",
+			payload.Repository.Name, payload.Ref)
+	case "":
+		err = fmt.Errorf("Payload ref_type was empty.")
+	}
+	return
+}
+
+func requestHandler(w http.ResponseWriter, req *http.Request) {
+	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
-}
-
-func tagTest(ref string) (result bool, err error) {
-	elements := strings.Split(ref, "/")
-	if len(elements) < 2 {
-		return false, fmt.Errorf("Could not parse ref string")
-	}
-	if elements[len(elements)-2] == "tags" {
-		result = true
-	}
-	return result, nil
-}
-
-func handlePush(payload interface{}) {
-	p := payload.(github.PushPayload)
-	ref := strings.Split(p.Ref, "/")
-	branch := ref[len(ref)-1]
-	fmt.Printf("%s ", branch)
-	t, err := tagTest(p.Ref)
+	payload, err := parsePayload(body)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf(p.Ref)
-	fmt.Printf(" %t\n", t)
-}
-
-func handleCreate(payload interface{}) {
-	p := payload.(github.CreatePayload)
-	fmt.Printf("%+#v\n", p)
+	payloadAction(payload)
 }
