@@ -7,6 +7,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
 type CreateEvent struct {
@@ -20,11 +23,25 @@ type Repository struct {
 	FullName string `json:"full_name"`
 }
 
+var hasAnnounced = false
+
 func main() {
+	go signalHandler()
+	go announce()
+	defer unAnnounce()
+
 	port := os.Getenv("PORT")
 	route := os.Getenv("ROUTE")
 	http.HandleFunc(route, requestHandler)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	log.Panic(http.ListenAndServe(":"+port, nil))
+}
+
+func announce() {
+	for {
+		time.Sleep(time.Second * 10)
+		log.Println("STUB: announce")
+		hasAnnounced = true
+	}
 }
 
 func parsePayload(body []byte) (payload CreateEvent, err error) {
@@ -55,5 +72,19 @@ func requestHandler(w http.ResponseWriter, req *http.Request) {
 	err = payloadAction(payload)
 	if err != nil {
 		log.Fatal(err)
+	}
+}
+
+func signalHandler() {
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	sig := <-sigs
+	unAnnounce()
+	log.Fatalf("%s\n", sig)
+}
+
+func unAnnounce() {
+	if hasAnnounced {
+		log.Println("STUB: unannounce")
 	}
 }
