@@ -27,8 +27,13 @@ var hasAnnounced = false
 
 func main() {
 	go signalHandler()
-	go announce()
-	defer unAnnounce()
+	if len(os.Getenv("ANNOUNCE")) > 0 {
+		log.Print("Service discovery announcements are activated.")
+		go announce()
+		defer unAnnounce()
+	} else {
+		log.Print("Service discovery announcements are NOT activated.")
+	}
 
 	port := os.Getenv("PORT")
 	route := os.Getenv("ROUTE")
